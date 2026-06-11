@@ -52,5 +52,3 @@ jobs:
             docker stop nextjs-app || true
             docker rm nextjs-app || true
             docker run -d --restart unless-stopped --name nextjs-app -p 3000:3000 ghcr.io/harikrishna2525/docker-nextjs-app:${{ github.sha }}
-            
-
