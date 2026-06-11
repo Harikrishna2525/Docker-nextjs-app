@@ -2,12 +2,21 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-COPY package.json *./ # Copy package.json and package-lock.json (if exists)
+# Copy package.json and package-lock.json (if available) to the working directory
 
-RUN npm install # Install dependencies
+COPY package.json *./  
 
-COPY . . # Copy the rest of the application code
+# Install dependencies
 
-EXPOSE 3000 # Expose the port your app runs on
+RUN npm install 
+
+# Copy the rest of the application code to the working directory
+
+COPY . . 
+
+# Expose the port that the application will run on
+EXPOSE 3000 
+
+# Start the application
 
 CMD ["npm", "start"] # Start the application
