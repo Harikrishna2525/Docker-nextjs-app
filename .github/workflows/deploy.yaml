@@ -60,4 +60,3 @@ jobs:
               --name nextjs-app \
               -p 3000:3000 \
               ghcr.io/harikrishna2525/docker-nextjs-app:${{ github.sha }}
-
