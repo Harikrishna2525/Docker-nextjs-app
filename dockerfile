@@ -1,3 +1,5 @@
+
+# Use an official Node.js runtime as a baseline image
 FROM node:22-alpine
 
 WORKDIR /app
@@ -13,10 +15,6 @@ RUN npm install
 # Copy the rest of the application code to the working directory
 
 COPY . . 
-
-# Build the application
-
-RUN npm run build
 
 # Expose the port that the application will run on
 EXPOSE 3000 
