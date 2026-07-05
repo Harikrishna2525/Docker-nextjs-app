@@ -1,62 +1,60 @@
-name: Deploy a Nextjs App to Build a GHCR Image and Deploy to EC2
-
+name : Deploy the nextjs app to Ec2 using Github Actions 
 
 on:
   push:
     branches:
       - main
-      - master
 
 permissions:
   contents: read
   packages: write
+
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v2
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v2
         with:
-          node-version: '22'
+          node-version: '14'
 
       - name: Install dependencies
         run: npm install
 
-      - name: Build Next.js App
+      - name: Build the Next.js app
         run: npm run build
 
-      - name: Login to GHCR
-        uses: docker/login-action@v3
+      - name: Build the Docker image using GHCR
+        run: docker build -t ghcr.io/harikrish2525/my-nextjs-app:${{ github.sha }} .
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_PAT }}
 
-      - name: Build and Push Image
-        run: |
-          docker build -t ghcr.io/harikrishna2525/docker-nextjs-app:${{ github.sha }} .
-          docker push ghcr.io/harikrishna2525/docker-nextjs-app:${{ github.sha }}
+      - name: Push the Docker image to GHCR
+        run: docker push ghcr.io/harikrish2525/my-nextjs-app:${{ github.sha }}
 
-      - name: Deploy to EC2
-        uses: appleboy/ssh-action@v1.0.3
+
+
+deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH into EC2 and deploy
+        uses: appleboy/ssh-action@v0.1.5
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
+          github_token: ${{ secrets.GHCR_PAT }}
           script: |
-            echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u harikrishna2525 --password-stdin
-
-            docker pull ghcr.io/harikrishna2525/docker-nextjs-app:${{ github.sha }}
-
-            docker stop nextjs-app || true
-            docker rm nextjs-app || true
-
-            docker run -d \
-              --restart unless-stopped \
-              --name nextjs-app \
-              -p 3000:3000 \
-              ghcr.io/harikrishna2525/docker-nextjs-app:${{ github.sha }}
+            docker pull ghcr.io/harikrish2525/my-nextjs-app:${{ github.sha }}
+            docker stop my-nextjs-app || true
+            docker rm my-nextjs-app || true
+            docker run -d --name my-nextjs-app -p 3000:3000 ghcr.io/harikrish2525/my-nextjs-app:${{ github.sha }}
