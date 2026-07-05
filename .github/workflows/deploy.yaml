@@ -3,6 +3,7 @@ name : Deploy the nextjs app to Ec2 using Github Actions
 on:
   push:
     branches:
+      - master
       - main
 
 permissions:
