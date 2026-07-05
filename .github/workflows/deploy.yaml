@@ -26,8 +26,8 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build the Next.js app
-        run: npm run build
+      # - name: Build the Next.js app
+      #   run: npm run build
 
       - name: Build the Docker image using GHCR
         run: docker build -t ghcr.io/harikrish2525/my-nextjs-app:${{ github.sha }} .
