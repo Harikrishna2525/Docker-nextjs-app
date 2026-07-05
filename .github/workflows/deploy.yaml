@@ -33,6 +33,7 @@ jobs:
       - name: Push the Docker image to GHCR
         run: docker push ghcr.io/harikrishna2525/my-nextjs-app:${{ github.sha }}
 
+        
       # Log into your AWS account
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
