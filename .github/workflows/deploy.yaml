@@ -42,8 +42,7 @@ jobs:
         run: docker push ghcr.io/harikrish2525/my-nextjs-app:${{ github.sha }}
 
 
-
-deploy:
+  deploy-to-ec2:
     runs-on: ubuntu-latest
     steps:
       - name: SSH into EC2 and deploy
