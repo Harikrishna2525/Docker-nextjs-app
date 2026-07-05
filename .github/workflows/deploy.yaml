@@ -43,18 +43,32 @@ jobs:
         run: docker push ghcr.io/harikrish2525/my-nextjs-app:${{ github.sha }}
 
 
-  deploy-to-ec2:
+ deploy-to-ec2:
     runs-on: ubuntu-latest
     steps:
-      - name: SSH into EC2 and deploy
-        uses: appleboy/ssh-action@v0.1.5
+      # Step 1: Configure AWS credentials using GitHub Secrets
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          github_token: ${{ secrets.GHCR_PAT }}
-          script: |
-            docker pull ghcr.io/harikrish2525/my-nextjs-app:${{ github.sha }}
-            docker stop my-nextjs-app || true
-            docker rm my-nextjs-app || true
-            docker run -d --name my-nextjs-app -p 3000:3000 ghcr.io/harikrish2525/my-nextjs-app:${{ github.sha }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1 # Change this to your actual AWS region
+
+      # Step 2: Send the deployment script to EC2 via AWS SSM Run Command
+      - name: Deploy to EC2 via AWS SSM
+        run: |
+          aws ssm send-command \
+            --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
+            --document-name "AWS-RunShellScript" \
+            --comment "Deploying Next.js App" \
+            --parameters 'commands=[
+              "export CR_PAT=${{ secrets.GHCR_PAT }}",
+              "echo $CR_PAT | docker login ghcr.io -u harikrish2525 --password-stdin",
+              "docker pull ghcr.io/harikrish2525/my-nextjs-app:${{ github.sha }}",
+              "docker stop my-nextjs-app || true",
+              "docker rm my-nextjs-app || true",
+              "docker run -d --name my-nextjs-app -p 3000:3000 ghcr.io/harikrish2525/my-nextjs-app:${{ github.sha }}"
+            ]' \
+            --query "Command.CommandId" \
+            --output text
+
