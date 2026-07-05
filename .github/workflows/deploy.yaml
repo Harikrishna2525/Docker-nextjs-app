@@ -42,18 +42,6 @@ jobs:
       - name: Push the Docker image to GHCR
         run: docker push ghcr.io/harikrish2525/my-nextjs-app:${{ github.sha }}
 
-
- deploy-to-ec2:
-    runs-on: ubuntu-latest
-    steps:
-      # Step 1: Configure AWS credentials using GitHub Secrets
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1 # Change this to your actual AWS region
-
       # Step 2: Send the deployment script to EC2 via AWS SSM Run Command
       - name: Deploy to EC2 via AWS SSM
         run: |
