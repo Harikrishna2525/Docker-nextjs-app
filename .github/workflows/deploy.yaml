@@ -3,6 +3,7 @@ name: Deploy the application to EC2 with GHCR using GitHub Actions
 on:
   push:
     branches:
+      - master
       - main
 
 permissions:
