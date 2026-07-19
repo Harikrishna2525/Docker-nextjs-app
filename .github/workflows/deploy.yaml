@@ -3,7 +3,7 @@ name: deploy the nodejs application using GHCR in Github Actions
 on:
   push:
     branches:
-      - main
+      - master
 
 permissions:
   contents: read
