@@ -14,10 +14,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4 # Upgraded to v4 for security and performance
+        uses: actions/checkout@v4
 
       - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3 # Upgraded to v3
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -31,21 +31,23 @@ jobs:
         run: |
           docker push ghcr.io/harikrishna2525/my-nodejs-app:latest
 
-      - name: Deploy to the Ec2 using SSM
-        uses: aws-actions/aws-ssm-run-command@v2
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          document-name: AWS-RunShellScript
-          # Note: Ensure your target string maps perfectly to AWS SSM expectations
-          targets: '[{"Key":"tag:Name","Values":["${{ secrets.EC2_INSTANCE_ID }}"]}]'
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1 # CRITICAL: Change this to your exact EC2 instance region
-          parameters: |
-            commands:
-              - |
-                echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-                docker pull ghcr.io/harikrishna2525/my-nodejs-app:latest
-                docker stop my-nodejs-app || true
-                docker rm my-nodejs-app || true
-                docker run -d --name my-nodejs-app -p 3000:3000 ghcr.io/harikrishna2525/my-nodejs-app:latest
-            
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1 # Make sure this matches your EC2 instance region
+
+      - name: Deploy to EC2 using AWS CLI SSM
+        run: |
+          aws ssm send-command \
+            --document-name "AWS-RunShellScript" \
+            --targets "Key=tag:Name,Values=${{ secrets.EC2_INSTANCE_ID }}" \
+            --comment "Deploying Node.js App from GitHub Actions" \
+            --parameters '{"commands":[
+              "echo \"${{ secrets.GITHUB_TOKEN }}\" | docker login ghcr.io -u ${{ github.actor }} --password-stdin",
+              "docker pull ghcr.io/harikrishna2525/my-nodejs-app:latest",
+              "docker stop my-nodejs-app || true",
+              "docker rm my-nodejs-app || true",
+              "docker run -d --name my-nodejs-app -p 3000:3000 ghcr.io/harikrishna2525/my-nodejs-app:latest",
+            ]}'
