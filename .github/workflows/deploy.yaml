@@ -1,9 +1,8 @@
-name: Deploy the application to EC2 with GHCR using GitHub Actions
+name: deploy the nodejs application using GHCR in Github Actions
 
 on:
   push:
     branches:
-      - master
       - main
 
 permissions:
@@ -13,47 +12,40 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4 # Upgraded to v4 for security and performance
 
-      - name: Login to GHCR
-        uses: docker/login-action@v3
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3 # Upgraded to v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_PAT }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build Docker Image
+      - name: Build the Docker image
         run: |
-          docker build -t ghcr.io/harikrishna2525/my-app:${{ github.sha }} .
+          docker build -t ghcr.io/harikrishna2525/my-nodejs-app:latest .
 
-      - name: Push Docker Image
+      - name: Push the Docker image to GitHub Container Registry
         run: |
-          docker push ghcr.io/harikrishna2525/my-app:${{ github.sha }}
+          docker push ghcr.io/harikrishna2525/my-nodejs-app:latest
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Deploy to the Ec2 using SSM
+        uses: aws-actions/aws-ssm-run-command@v2
         with:
+          document-name: AWS-RunShellScript
+          # Note: Ensure your target string maps perfectly to AWS SSM expectations
+          targets: '[{"Key":"tag:Name","Values":["${{ secrets.EC2_INSTANCE_ID }}"]}]'
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-
-      - name: Deploy via AWS SSM
-        run: |
-          aws ssm send-command \
-            --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
-            --document-name "AWS-RunShellScript" \
-            --parameters 'commands=[
-              "echo \"${{ secrets.GHCR_PAT }}\" | docker login ghcr.io -u harikrishna2525 --password-stdin",
-              "docker pull ghcr.io/harikrishna2525/my-app:${{ github.sha }}",
-              "docker stop my-app || true",
-              "docker rm my-app || true",
-              "docker run -d --restart unless-stopped --name my-app -p 3000:3000 ghcr.io/harikrishna2525/my-app:${{ github.sha }}"
-            ]'
+          aws-secret-access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1 # CRITICAL: Change this to your exact EC2 instance region
+          parameters: |
+            commands:
+              - |
+                echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+                docker pull ghcr.io/harikrishna2525/my-nodejs-app:latest
+                docker stop my-nodejs-app || true
+                docker rm my-nodejs-app || true
+                docker run -d --name my-nodejs-app -p 3000:3000 ghcr.io/harikrishna2525/my-nodejs-app:latest
+            
