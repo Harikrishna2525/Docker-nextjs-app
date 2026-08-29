@@ -44,4 +44,4 @@ jobs:
             --instance-ids ${{ secrets.EC2_INSTANCE_ID }} \
             --document-name "AWS-RunShellScript" \
             --comment "Deploying Node.js App from GitHub Actions" \
-            --parameters '{"commands":["echo \"${{ secrets.GHCR_PAT }}\" | docker login ghcr.io -u harikrishna2525 --password-stdin","docker pull ghcr.io/harikrishna2525/my-nodejs-app:latest","docker stop my-nodejs-app || true","docker rm my-nodejs-app || true","docker run -d --name my-nodejs-app -p 3000:3000 ghcr.io/harikrishna2525/my-nodejs-app:latest"]}'
+            --parameters '{"commands":["echo \"${{ secrets.GHCR_PAT }}\" | docker login ghcr.io -u harikrishna2525 --password-stdin","docker pull ghcr.io/harikrishna2525/my-nodejs-app:latest","docker stop my-nodejs-app || true","docker rm my-nodejs-app || true","docker run -d --name my-nodejs-app -p 5000:5000 ghcr.io/harikrishna2525/my-nodejs-app:latest"]}'
