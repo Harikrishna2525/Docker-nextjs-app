@@ -28,7 +28,7 @@ jobs:
           docker build -t ghcr.io/harikrishna2525/my-nodejs-app:latest .
 
       - name: Add trivy for vulnerability scanning
-        uses:  aquasecurity/trivy-action@0.36.0
+        uses:  aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ghcr.io/harikrishna2525/my-nodejs-app:latest
           format: 'table'
