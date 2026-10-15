@@ -27,6 +27,16 @@ jobs:
         run: |
           docker build -t ghcr.io/harikrishna2525/my-nodejs-app:latest .
 
+      - name: Add trivy for vulnerability scanning
+        uses: aquasecurity/trivy-action@v2
+        with:
+          image-ref: ghcr.io/harikrishna2525/my-nodejs-app:latest
+          format: 'table'
+          exit-code: '1'
+          vuln-type: 'os,library,dependency,config'
+          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true
+
       - name: Push the Docker image to GitHub Container Registry
         run: |
           docker push ghcr.io/harikrishna2525/my-nodejs-app:latest
