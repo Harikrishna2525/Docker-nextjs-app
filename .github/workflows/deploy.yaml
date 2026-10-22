@@ -1,17 +1,46 @@
-name: deploy the nodejs application using GHCR in Github Actions
+
+name: Deploy Node.js application using GHCR
 
 on:
   push:
     branches:
       - master
 
-permissions:
-  contents: read
-  packages: write
+permissions: {}
 
 jobs:
-  docker-push:
+  codeql:
+    name: CodeQL SAST Analysis
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: javascript-typescript
+          build-mode: none
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:javascript-typescript"
+
+  docker-push:
+    name: Build, Scan and Push Docker Image
+    runs-on: ubuntu-latest
+    needs: codeql
+
+    permissions:
+      contents: read
+      packages: write
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -25,45 +54,55 @@ jobs:
 
       - name: Build the Docker image
         run: |
-          docker build -t ghcr.io/harikrishna2525/my-nodejs-app:latest .
+          docker build \
+            -t ghcr.io/harikrishna2525/my-nodejs-app:${{ github.sha }} \
+            .
 
-    
       - name: Scan image with Trivy
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-         image-ref: ghcr.io/harikrishna2525/my-nodejs-app:latest
-         version: v0.76.0
-         format: table
-         exit-code: '1'
-         ignore-unfixed: true
-         vuln-type: 'os,library'
-         severity: 'CRITICAL,HIGH'
-         scanners: vuln
+          image-ref: ghcr.io/harikrishna2525/my-nodejs-app:${{ github.sha }}
+          version: v0.76.0
+          format: table
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+          scanners: vuln
 
-
-       
-
-      - name: Push the Docker image to GitHub Container Registry
+      - name: Push the Docker image to GHCR
         run: |
-          docker push ghcr.io/harikrishna2525/my-nodejs-app:latest
+          docker push ghcr.io/harikrishna2525/my-nodejs-app:${{ github.sha }}
 
+  # deploy:
+  #   name: Deploy to EC2
+  #   runs-on: ubuntu-latest
+  #   needs: docker-push
 
-  
-  deploy:
-    runs-on: ubuntu-latest
-    needs: docker-push
-    steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1 # Make sure this matches your EC2 instance region
+  #   steps:
+  #     - name: Configure AWS credentials
+  #       uses: aws-actions/configure-aws-credentials@v4
+  #       with:
+  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #         aws-region: us-east-1
 
-      - name: Deploy to EC2 using AWS CLI SSM
-        run: |
-          aws ssm send-command \
-            --instance-ids ${{ secrets.EC2_INSTANCE_ID }} \
-            --document-name "AWS-RunShellScript" \
-            --comment "Deploying Node.js App from GitHub Actions" \
-            --parameters '{"commands":["echo \"${{ secrets.GHCR_PAT }}\" | docker login ghcr.io -u harikrishna2525 --password-stdin","docker pull ghcr.io/harikrishna2525/my-nodejs-app:latest","docker stop my-nodejs-app || true","docker rm my-nodejs-app || true","docker run -d --name my-nodejs-app -p 5000:5000 ghcr.io/harikrishna2525/my-nodejs-app:latest"]}'
+  #     - name: Deploy to EC2 using AWS SSM
+  #       env:
+  #         EC2_INSTANCE_ID: ${{ secrets.EC2_INSTANCE_ID }}
+  #         IMAGE_TAG: ${{ github.sha }}
+  #       run: |
+  #         aws ssm send-command \
+  #           --instance-ids "$EC2_INSTANCE_ID" \
+  #           --document-name "AWS-RunShellScript" \
+  #           --comment "Deploying security-scanned Node.js image" \
+  #           --parameters "$(jq -n \
+  #             --arg tag "$IMAGE_TAG" \
+  #             '{
+  #               commands: [
+  #                 "docker pull ghcr.io/harikrishna2525/my-nodejs-app:" + $tag,
+  #                 "docker stop my-nodejs-app || true",
+  #                 "docker rm my-nodejs-app || true",
+  #                 "docker run -d --restart unless-stopped --name my-nodejs-app -p 5000:5000 ghcr.io/harikrishna2525/my-nodejs-app:" + $tag
+  #               ]
+  #             }')"
