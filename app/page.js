@@ -1,7 +1,12 @@
 export default function Home() {
   // Replace this with your actual external API endpoint later
   const API_URL = "https://api.biblehi.com/api";
-  const API_KEY = "harik@123tech";
+  // Test with a generic high-entropy secret string (Gitleaks generic rule)
+const API_KEY = "c1a3b5e7d9f2a4b6c8d0e2f4a6b8c0d2e4f6a8b0"; 
+
+// OR test with a simulated AWS token pattern
+const AWS_SECRET = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY";
+
 
   return (
     <main style={{
