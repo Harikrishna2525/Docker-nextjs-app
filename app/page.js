@@ -1,4 +1,8 @@
 export default function Home() {
+  // Replace this with your actual external API endpoint later
+  const API_URL = "https://example.com";
+  const API_KEY = "123";
+
   return (
     <main style={{
       display: "flex",
@@ -11,6 +15,12 @@ export default function Home() {
         <h1>🚀 Next.js + Docker</h1>
         <p>Running inside a Docker container</p>
         <p>CI/CD ready ✅</p>
+        
+        {/* Simple example showing how to use the variables */}
+        <div style={{ marginTop: "20px", fontSize: "14px", color: "#666" }}>
+          <p><strong>API Endpoint:</strong> {API_URL}</p>
+          <p><strong>Configured Key:</strong> {API_KEY}</p>
+        </div>
       </div>
     </main>
   );
