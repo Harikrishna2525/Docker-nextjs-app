@@ -1,7 +1,7 @@
 export default function Home() {
   // Replace this with your actual external API endpoint later
-  const API_URL = "https://example.com";
-  const API_KEY = "123";
+  const API_URL = "https://api.biblehi.com/api";
+  const API_KEY = "harik@123tech";
 
   return (
     <main style={{
