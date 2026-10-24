@@ -58,7 +58,7 @@ jobs:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
     needs: codeql
-    
+
 
     permissions:
       contents: read
@@ -81,5 +81,5 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/harikrishna2525/docker-nextjs-app:${{ github.sha }}
-            ghcr.io/harikrishna2525/docker-nextjs-app:latest
+            ghcr.io/harikrishna2525/nextjs-new:${{ github.sha }}
+            ghcr.io/harikrishna2525/nextjs-new:latest
